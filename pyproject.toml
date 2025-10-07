@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parent_ion_classifier"
+version = "1.0.0"
+description = "A package for classifying parent ions in mass spectrometry (MS/MS) experiments"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Ariel Katz"}
+]
+keywords = ["mass-spectrometry", "deep-learning", "classification", "chemistry", "bioinformatics"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "torch>=2.2.0",
+    "huggingface_hub>=0.23",
+    "numpy<2",
+    "pandas>=1.3.0,<2.0.0",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "flake8",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/Kezahle/parent_ion_classifier"
+Documentation = "https://github.com/Kezahle/parent_ion_classifier#readme"
+Repository = "https://github.com/Kezahle/parent_ion_classifier"
+Issues = "https://github.com/Kezahle/parent_ion_classifier/issues"
+
+[project.scripts]
+classify_parent_ion = "parent_ion_classifier.main:main"
+parent-ion-classifier = "parent_ion_classifier.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["parent_ion_classifier*"]
+
+[tool.setuptools.package-data]
+"parent_ion_classifier" = ["models/**/*", "test/*", "test/**/*"]
+"parent_ion_classifier.config" = ["model_config.json"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

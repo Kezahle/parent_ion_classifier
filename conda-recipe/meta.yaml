@@ -1,0 +1,54 @@
+package:
+  name: parent_ion_classifier
+  version: "1.0.0"
+
+source:
+  path: ..
+  license_file: LICENSE
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . -vv
+
+requirements:
+  host:
+    - python >=3.10
+    - setuptools
+    - pip
+    - tqdm
+    - requests
+    - numpy
+    - pandas
+    - onnx
+    - seaborn
+    - matplotlib
+    - huggingface_hub >=0.23
+  run:
+    - python >=3.10
+    - pytorch-cpu>=2.2.0
+    - tqdm
+    - requests
+    - numpy
+    - pandas
+    - onnx
+    - seaborn
+    - matplotlib
+    - scikit-learn
+    - huggingface_hub >=0.23
+
+test:
+  imports:
+    - parent_ion_classifier
+    - torch
+  commands:
+    #Uncomment to run the unitest as part of the build
+    # This is sensitive to OS/python/numpy version so should be carefull
+    #- classify_parent_ion --test
+    - classify_parent_ion --help
+    
+about:
+  #home: https://github.com/your_username/your_package_name
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: 'A package for classifying parent ions in mass spectrometry (MS/MS) experiments, developed as part of a research thesis at the Weizmann Institute of Science. It leverages deep learning models to detect and classify parent ions from MS data, providing insights for chemical analysis and compound identification.'

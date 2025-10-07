@@ -1,0 +1,43 @@
+{
+  "repo_id": "katz-ariel/parent_ion_classifier",
+  "revision": "main",
+  "models": {
+    "test_single": {
+      "filename": "test_single.pt_jit",
+      "description": "Test model for single ionization mode - used for unit testing and validation"
+    },
+    "test_dual": {
+      "filename": "test_dual.pt_jit", 
+      "description": "Test model for dual ionization mode - used for unit testing and validation"
+    },
+    "DualModeMSNet": {
+      "filename": "mh_x_attention.pt_jit",
+      "description": "Production model for dual-mode MS spectra"
+    },
+    "TopIntensityMSNet_merged": {
+      "filename": "merged.pt_jit",
+      "description": "Production model for single ionization mode, trained on both positive and negative ionization spectra"
+    },
+    "TopIntensityMSNet_positive": {
+      "filename": "positive.pt_jit",
+      "description": "Specialized model for positive ionization mode spectra"
+    },
+    "TopIntensityMSNet_negative": {
+      "filename": "negative.pt_jit",
+      "description": "Specialized model for negative ionization mode spectra"
+    },
+    "MultiHeaded_X_attention": {
+      "filename": "mh_x_attention.pt_jit",
+      "description": "Dual-mode model with multi-headed cross-attention module (best performance)"
+    },
+    "InterleavedEmbeddings": {
+      "filename": "interleaved.pt_jit",
+      "description": "Dual-mode model with balancing complexity and good performance"
+    }
+  },
+  "model_groups": {
+    "test_models": ["test_single", "test_dual"],
+    "production_models": ["DualModeMSNet", "TopIntensityMSNet_merged", "TopIntensityMSNet_positive", "TopIntensityMSNet_negative"],
+    "experimental_models": ["MultiHeaded_X_attention", "InterleavedEmbeddings"]
+  }
+}
