@@ -1,0 +1,81 @@
+# Pre-commit hooks configuration
+# These hooks run automatically before each commit to ensure code quality
+#
+# To install: pip install pre-commit && pre-commit install
+# To run manually: pre-commit run --all-files
+
+repos:
+  # General file checks (trailing whitespace, file endings, etc.)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Remove trailing whitespace from files
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+      # Ensure files end with a newline
+      - id: end-of-file-fixer
+
+      # Check YAML files are valid
+      - id: check-yaml
+
+      # Check TOML files are valid (pyproject.toml)
+      - id: check-toml
+
+      # Check JSON files are valid
+      - id: check-json
+
+      # Prevent large files from being committed (>1MB)
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+      # Detect merge conflict markers
+      - id: check-merge-conflict
+
+      # Check for debugger imports (pdb, ipdb, etc.)
+      - id: debug-statements
+
+      # Ensure consistent line endings (LF on Unix, CRLF on Windows)
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Python code formatter (black)
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.10
+        args: ['--line-length=100']
+        # Black will auto-format Python files to a consistent style
+
+  # Python import sorter (isort)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ['--profile=black', '--line-length=100']
+        # isort organizes imports alphabetically and by section
+
+  # Python linter (ruff) - faster alternative to flake8
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.11
+    hooks:
+      - id: ruff
+        args: ['--fix', '--exit-non-zero-on-fix']
+        # Ruff checks for common Python errors and style issues
+
+# What each hook does:
+#
+# trailing-whitespace: Removes spaces at end of lines (keeps code clean)
+# end-of-file-fixer: Adds newline at end of files (Unix standard)
+# check-yaml: Validates YAML syntax (catches errors early)
+# check-toml: Validates TOML syntax (for pyproject.toml)
+# check-json: Validates JSON syntax
+# check-added-large-files: Prevents accidentally committing large files
+# check-merge-conflict: Finds leftover merge conflict markers
+# debug-statements: Finds debugging code you forgot to remove
+# mixed-line-ending: Ensures consistent line endings
+#
+# black: Auto-formats Python code (spacing, quotes, etc.)
+# isort: Organizes imports (groups standard lib, third-party, local)
+# ruff: Fast linter (finds bugs, unused imports, style issues)
