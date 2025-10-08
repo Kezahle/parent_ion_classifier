@@ -91,7 +91,14 @@ df.sort_values(by=['MS2', 'MS1', '_original_index'], ascending=False)
 }
 ```
 
-**Design Decision**: Separating model configuration from code allows easy model updates without code changes.
+**Design Decisions**: Separating model configuration from code allows easy model updates without code changes.
+
+### Import Order in __init__.py
+
+Constants are defined before imports to avoid circular dependencies:
+- `classifier.py` imports constants from `__init__.py`
+- `__init__.py` imports functions from `classifier.py`
+- `DataCanonizer` is imported directly in `classifier.py` to break the cycle
 
 ### 4. Classification Pipeline (`classifier.py`)
 

@@ -1,5 +1,9 @@
 # Parent Ion Classifier
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 A Python package for classifying parent ions in mass spectrometry (MS/MS) experiments using deep learning models.
 
 Developed as part of research at the Weizmann Institute of Science, this package leverages PyTorch-based neural networks to detect and classify parent ions from MS data, providing insights for chemical analysis and compound identification.
