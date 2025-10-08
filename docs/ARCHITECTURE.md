@@ -14,22 +14,22 @@ Data Input → Canonization → Model Inference → Normalization → Output
 
 ```
 parent_ion_classifier/
-├── config/              # Configuration management
-│   ├── __init__.py
-│   ├── model_config.py  # Model configuration loading
-│   └── model_config.json # Model definitions
-├── models/              # Model management
-│   ├── __init__.py
-│   ├── loader.py        # HuggingFace model loading
-│   └── manager.py       # Generic model management
-├── test/                # Test data and fixtures
-│   ├── spectra_dict.pkl
-│   └── spectra_dict_*_norm.pkl
-├── classifier.py        # Core classification logic
-├── data_canonizer.py    # Data preprocessing
-├── main.py             # CLI entry point
-├── test.py             # Unit tests
-└── utils.py            # Utility functions
+|-- config/              # Configuration management
+|   |-- __init__.py
+|   |-- model_config.py  # Model configuration loading
+|   `-- model_config.json # Model definitions
+|-- models/              # Model management
+|   |-- __init__.py
+|   |-- loader.py        # HuggingFace model loading
+|   `-- manager.py       # Generic model management
+|-- test/                # Test data and fixtures
+|   |-- spectra_dict.pkl
+|   `-- spectra_dict_*_norm.pkl
+|-- classifier.py        # Core classification logic
+|-- data_canonizer.py    # Data preprocessing
+|-- main.py             # CLI entry point
+|-- test.py             # Unit tests
+`-- utils.py            # Utility functions
 ```
 
 ## Core Components
@@ -69,6 +69,24 @@ df.sort_values(by=['MS2', 'MS1', '_original_index'], ascending=False)
 - Revision pinning for reproducibility
 - Cache management (info, clearing)
 
+**Model Aliasing**: The configuration supports multiple model names referencing the same file for flexibility and backward compatibility. Specifically, `DualModeMSNet` and `MultiHeaded_X_attention` both point to `mh_x_attention.pt_jit`.
+
+**Design Rationale**: Two dual-mode models were developed:
+1. **MultiHeaded_X_attention** (`mh_x_attention.pt_jit`): Uses multi-headed cross-attention, providing marginally better prediction performance but with slower inference and training times
+2. **InterleavedEmbeddings** (`interleaved.pt_jit`): Faster alternative with interleaved embeddings, offering good performance with quicker processing
+
+`DualModeMSNet` is configured to use the MultiHeaded_X_attention architecture by default, prioritizing prediction accuracy for the standard use case. However, users processing large batches who prefer faster inference can easily substitute `InterleavedEmbeddings` by loading it directly:
+
+```python
+# Default: Best performance
+dual_model = load_model('DualModeMSNet')
+
+# Alternative: Faster processing
+dual_model = load_model('InterleavedEmbeddings')
+```
+
+When a model is loaded, only one copy is downloaded and cached regardless of which alias is used.
+
 ### 3. Configuration (`config/`)
 
 **Purpose**: Centralized model configuration
@@ -91,7 +109,10 @@ df.sort_values(by=['MS2', 'MS1', '_original_index'], ascending=False)
 }
 ```
 
-**Design Decisions**: Separating model configuration from code allows easy model updates without code changes.
+**Design Decisions**:
+- Separating model configuration from code allows easy model updates without code changes
+- Model aliases (multiple names for same file) enable backward compatibility
+- Model groups facilitate bulk operations like downloading all production models
 
 ### Import Order in __init__.py
 
@@ -112,10 +133,10 @@ Constants are defined before imports to avoid circular dependencies:
 
 **Data Flow**:
 ```
-Input Dict → DataCanonizer → Tensors → Models → Normalization → Output Dict
+Input Dict → DataCanonizer → Tensors → Models → Raw Outputs → Normalization → Output Dict
 ```
 
-**Design Decision**: Models return raw logits; normalization is applied separately for flexibility.
+**Design Decision**: Models return raw logits as tensors that must be squeezed (`.squeeze()`) before normalization. Normalization is applied separately for flexibility, allowing users to choose the most appropriate method for their use case.
 
 ### 5. Command-Line Interface (`main.py`)
 
@@ -281,11 +302,12 @@ Current design handles:
 - Validate inputs early
 - Provide actionable error messages
 - Use appropriate exception types
+- Use single quotes for all error messages (consistency)
 
 ### Examples
 
 ```python
-# Good: Clear, actionable
+# Good: Clear, actionable, single quotes
 if model_name not in config.models:
     raise ValueError(
         f"Unknown model '{model_name}'. "
@@ -294,8 +316,8 @@ if model_name not in config.models:
 
 # Good: Suggests fix
 if not os.path.exists(input_file):
-    print(f"File not found: {input_file}")
-    print("Please check the path and try again.")
+    print(f'File not found: {input_file}')
+    print('Please check the path and try again.')
     sys.exit(1)
 ```
 
@@ -307,7 +329,7 @@ Currently uses `print()` for user feedback. Future versions may add proper loggi
 import logging
 
 logger = logging.getLogger(__name__)
-logger.info("Processing spectra...")
+logger.info('Processing spectra...')
 ```
 
 ## Dependencies

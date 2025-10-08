@@ -36,6 +36,13 @@ Thank you for your interest in contributing to the Parent Ion Classifier project
 
 5. **Build and test**
    ```bash
+   # Build the package only
+   ./scripts/build_and_test.sh build
+
+   # Set up test environment only
+   ./scripts/build_and_test.sh test
+
+   # Build package and set up test environment
    ./scripts/build_and_test.sh all
    ```
 
@@ -209,6 +216,18 @@ def canonise_and_truncate_df(
         150
     """
     pass
+```
+
+## Error Messages
+
+All error messages in the codebase should use **single quotes** for consistency:
+
+```python
+# Good - single quotes
+raise ValueError(f"Unknown model '{model_name}'. Available: {available_models}")
+
+# Bad - double quotes
+raise ValueError(f"Unknown model \"{model_name}\". Available: {available_models}")
 ```
 
 ## Reporting Issues

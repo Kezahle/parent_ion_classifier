@@ -9,6 +9,7 @@ Complete API documentation for the Parent Ion Classifier package.
 - [Model Management](#model-management)
 - [Configuration](#configuration)
 - [Utilities](#utilities)
+- [Internal Functions](#internal-functions)
 
 ## Core Functions
 
@@ -409,6 +410,8 @@ class ModelConfig:
     model_groups: Dict[str, List[str]]
 ```
 
+**Note on Model Filenames**: Some model names may reference the same underlying file. For example, `DualModeMSNet` and `MultiHeaded_X_attention` both use `mh_x_attention.pt_jit`. This is intentional for backward compatibility - `DualModeMSNet` serves as the production alias while `MultiHeaded_X_attention` preserves the experimental name.
+
 ### ModelSpec
 
 Model specification dataclass.
@@ -497,7 +500,8 @@ models = MSNetModels(
 
 ```python
 from parent_ion_classifier import (
-    N,                              # 150 - Maximum peaks per spectrum
+    N,                              # 150 - Maximum peaks per
+    spectrum,
     DATA_COLUMNS,                   # ['mz', 'MS1', 'MS2']
     LABEL_COLUMN,                   # ['parent']
     MODEL_MISSING_VALUE,            # -1
@@ -527,6 +531,38 @@ from parent_ion_classifier import (
    - Probabilities sum to 1 within each mode
    - Use for dual-mode spectra or when mode is uncertain
 
+## Internal Functions
+
+The following functions are used internally by the package. They are documented here for developers and contributors, but typical users should not need to call them directly.
+
+### classifier.apply_output_normalization
+
+Normalize model output tensor and combine with DataFrame. This is called internally by the classification pipeline.
+
+```python
+def apply_output_normalization(
+    input_t: torch.Tensor,
+    output: torch.Tensor,
+    canonized_pos_df: pd.DataFrame,
+    canonized_neg_df: pd.DataFrame,
+    single_ionization: bool,
+    normalization_method: str = "none",
+) -> pd.DataFrame
+```
+
+**Parameters**:
+- `input_t`: The input tensor used for inference
+- `output`: The raw output tensor from the model
+- `canonized_pos_df`: Canonized DataFrame for positive spectra
+- `canonized_neg_df`: Canonized DataFrame for negative spectra
+- `single_ionization`: Flag indicating if spectra are single-mode
+- `normalization_method`: The normalization method to apply
+
+**Returns**:
+- DataFrame with normalized model predictions
+
+**Note**: This function is called automatically by `process_spectra()` and `process_spectrum()`. Users should not typically need to call it directly.
+
 ## Error Handling
 
 ### Common Exceptions
@@ -536,7 +572,7 @@ from parent_ion_classifier import (
 try:
     model = load_model('NonexistentModel', raise_exception=True)
 except ValueError as e:
-    print(f"Model not found: {e}")
+    print(f'Model not found: {e}')
 ```
 
 **FileNotFoundError**: Input file doesn't exist
@@ -544,7 +580,7 @@ except ValueError as e:
 try:
     data = unpickle_file('missing.pkl')
 except FileNotFoundError:
-    print("File not found!")
+    print('File not found!')
 ```
 
 **LocalEntryNotFoundError**: Model not in cache and auto_download=False
@@ -554,8 +590,10 @@ from huggingface_hub.utils import LocalEntryNotFoundError
 try:
     model = load_jit_model('DualModeMSNet', auto_download=False)
 except LocalEntryNotFoundError:
-    print("Model not cached. Run: parent-ion-classifier download")
+    print('Model not cached. Run: parent-ion-classifier download')
 ```
+
+**Note**: All error messages use single quotes for consistency throughout the codebase.
 
 ## Type Hints
 

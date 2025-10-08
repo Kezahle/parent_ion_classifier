@@ -165,18 +165,43 @@ parent-ion-classifier test --recreate-output
 ## Available Models
 
 ### Production Models
-- **DualModeMSNet**: Dual-mode spectra classification
+- **DualModeMSNet**: Default dual-mode model (uses MultiHeaded_X_attention for best performance)
 - **TopIntensityMSNet_merged**: Single ionization, trained on both modes
 - **TopIntensityMSNet_positive**: Specialized for positive ionization
 - **TopIntensityMSNet_negative**: Specialized for negative ionization
 
 ### Experimental Models
-- **MultiHeaded_X_attention**: Best performance with cross-attention
-- **InterleavedEmbeddings**: Balanced complexity and performance
+- **MultiHeaded_X_attention**: Best prediction performance but slower (same architecture as DualModeMSNet)
+- **InterleavedEmbeddings**: Faster alternative for dual-mode with minimal performance trade-off
 
 ### Test Models
 - **test_single**: For unit testing single ionization
 - **test_dual**: For unit testing dual ionization
+
+**Note:** For dual-mode spectra, `DualModeMSNet` uses the `MultiHeaded_X_attention` architecture by default for optimal prediction performance. Users processing large batches who prioritize speed can substitute `InterleavedEmbeddings` when calling `load_model()` without significantly affecting classification accuracy.
+
+### Choosing Between Dual-Mode Models
+
+When working with dual-mode spectra, you can choose between two models:
+
+| Model | Performance | Speed | Best For |
+|-------|------------|-------|----------|
+| **DualModeMSNet** (default) | Best | Slower | High-accuracy requirements, small-medium datasets |
+| **InterleavedEmbeddings** | Very good | Faster | Large batch processing, speed-critical workflows |
+
+**Example - Using the faster model:**
+```python
+from parent_ion_classifier.models import load_model
+from parent_ion_classifier.classifier import MSNetModels
+
+# Use InterleavedEmbeddings for faster processing
+models = MSNetModels(
+    positive=load_model('TopIntensityMSNet_positive'),
+    negative=load_model('TopIntensityMSNet_negative'),
+    merged=load_model('TopIntensityMSNet_merged'),
+    dual=load_model('InterleavedEmbeddings')  # Faster alternative
+)
+```
 
 ## Normalization Methods
 
@@ -190,11 +215,11 @@ parent-ion-classifier test --recreate-output
 ### Building from Source
 
 ```bash
-# Build package
-./scripts/build_script.sh
+# Build package only
+./scripts/build_and_test.sh build
 
-# Set up test environment
-./scripts/test_script.sh
+# Set up test environment only
+./scripts/build_and_test.sh test
 
 # Build and test in one command
 ./scripts/build_and_test.sh all
@@ -204,18 +229,18 @@ parent-ion-classifier test --recreate-output
 
 ```
 parent_ion_classifier/
-├── src/parent_ion_classifier/    # Main package
-│   ├── config/                   # Configuration management
-│   ├── models/                   # Model loading and management
-│   ├── test/                     # Test data and fixtures
-│   ├── classifier.py             # Core classification logic
-│   ├── data_canonizer.py         # Data preprocessing
-│   ├── main.py                   # CLI entry point
-│   └── utils.py                  # Utility functions
-├── scripts/                      # Build and test scripts
-├── conda-recipe/                 # Conda packaging
-├── docs/                         # Documentation
-└── tests/                        # Additional tests (if any)
+|-- src/parent_ion_classifier/    # Main package
+|   |-- config/                   # Configuration management
+|   |-- models/                   # Model loading and management
+|   |-- test/                     # Test data and fixtures
+|   |-- classifier.py             # Core classification logic
+|   |-- data_canonizer.py         # Data preprocessing
+|   |-- main.py                   # CLI entry point
+|   `-- utils.py                  # Utility functions
+|-- scripts/                      # Build and test scripts
+|-- conda-recipe/                 # Conda packaging
+|-- docs/                         # Documentation
+`-- tests/                        # Additional tests (if any)
 ```
 
 ### Running Tests

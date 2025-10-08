@@ -12,7 +12,7 @@
     },
     "DualModeMSNet": {
       "filename": "mh_x_attention.pt_jit",
-      "description": "Production model for dual-mode MS spectra"
+      "description": "Default production model for dual-mode MS spectra - uses MultiHeaded_X_attention for best prediction performance"
     },
     "TopIntensityMSNet_merged": {
       "filename": "merged.pt_jit",
@@ -28,11 +28,11 @@
     },
     "MultiHeaded_X_attention": {
       "filename": "mh_x_attention.pt_jit",
-      "description": "Dual-mode model with multi-headed cross-attention module (best performance)"
+      "description": "Dual-mode model with multi-headed cross-attention - best prediction performance but slower (used as DualModeMSNet default)"
     },
     "InterleavedEmbeddings": {
       "filename": "interleaved.pt_jit",
-      "description": "Dual-mode model with balancing complexity and good performance"
+      "description": "Dual-mode model with interleaved embeddings - faster alternative to DualModeMSNet with minimal performance trade-off"
     }
   },
   "model_groups": {
