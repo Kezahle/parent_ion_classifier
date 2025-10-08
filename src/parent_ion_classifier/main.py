@@ -178,7 +178,8 @@ def handle_classify_cmd(parser: argparse.ArgumentParser, args: argparse.Namespac
 
             if not success:
                 print(
-                    "Failed to ensure required models are available. Use --skip-model-check to bypass."
+                    "Failed to ensure required models are available. \
+                        Use --skip-model-check to bypass."
                 )
                 sys.exit(1)
             print("Required models verified.")

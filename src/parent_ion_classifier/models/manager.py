@@ -427,7 +427,8 @@ class ModelManager:
 
             if repo_cache is None:
                 print(
-                    f"No cached files found for repository '{self.config.repo_id}' in {self.get_cache_directory()}"
+                    f"No cached files found for repository '{self.config.repo_id}' "
+                    f"in {self.get_cache_directory()}"
                 )
                 return True
 
@@ -436,7 +437,8 @@ class ModelManager:
 
             if target_revision is None:
                 print(
-                    f"No cached files found for revision '{self.config.revision}' in repository '{self.config.repo_id}'"
+                    f"No cached files found for revision '{self.config.revision}' "
+                    f"in repository '{self.config.repo_id}'"
                 )
                 return True
 
@@ -444,7 +446,10 @@ class ModelManager:
             if model_names is None:
                 # Clear entire repository cache for this revision
                 files_to_clear = list(target_revision.files)
-                clear_description = f"all cached models from {self.config.repo_id} (revision: {self.config.revision})"
+                clear_description = (
+                    f"all cached models from {self.config.repo_id} "
+                    f"(revision: {self.config.revision})"
+                )
             else:
                 # Clear specific models
                 target_filenames = set()
@@ -457,7 +462,10 @@ class ModelManager:
                 files_to_clear = [
                     f for f in target_revision.files if f.file_name in target_filenames
                 ]
-                clear_description = f"models {model_names} from {self.config.repo_id} (revision: {self.config.revision})"
+                clear_description = (
+                    f"models {model_names} from {self.config.repo_id} "
+                    f"(revision: {self.config.revision})"
+                )
 
             if not files_to_clear:
                 print("No matching files found in cache")
@@ -468,7 +476,8 @@ class ModelManager:
             size_mb = total_size / (1024 * 1024)
 
             print(
-                f"Found {len(files_to_clear)} cached files ({size_mb:.1f} MB) in {self.get_cache_directory()}"
+                f"Found {len(files_to_clear)} cached files ({size_mb:.1f} MB) "
+                f"in {self.get_cache_directory()}"
             )
 
             # Confirm if requested
