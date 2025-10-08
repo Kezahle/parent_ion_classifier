@@ -143,7 +143,7 @@ def canonise_and_truncate_df(
 from parent_ion_classifier import DataCanonizer
 import pandas as pd
 
-dc = DataCanonizer(N=150, data_columns=['mz', 'MS1', 'MS2'], 
+dc = DataCanonizer(N=150, data_columns=['mz', 'MS1', 'MS2'],
                    label_columns=['parent'])
 
 df = pd.DataFrame({
@@ -522,7 +522,7 @@ from parent_ion_classifier import (
    - Probabilities sum to 1 across all peaks
    - Use when exactly one parent ion is expected
 
-4. **`'softmax_per_ionization'`** (Recommended): 
+4. **`'softmax_per_ionization'`** (Recommended):
    - Separate softmax for positive and negative modes
    - Probabilities sum to 1 within each mode
    - Use for dual-mode spectra or when mode is uncertain
