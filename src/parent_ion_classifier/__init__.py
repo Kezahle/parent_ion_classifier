@@ -3,9 +3,36 @@
 A package for classifying parent ions in mass spectrometry (MS/MS) experiments
 using deep learning models.
 """
+
+# ruff: noqa: E402
+# Constants must be defined before imports to avoid circular import
+
+# =============================================================================
+# Constants - MUST be defined BEFORE importing submodules
+# =============================================================================
+TENSOR_PRINT_PRECISION = 4
+TENSOR_PRINT_SCI_MODE = False
+
+# Maximum number of rows outputted by an MS1/MS2 experiment
+N = 150
+# The number of channels (depth) outputted from the first layer of convolution
+C = 10
+
+LABEL_COLUMN = ["parent"]
+MZ_COLUMN = "mz"
+DATA_COLUMNS = [MZ_COLUMN] + ["MS1", "MS2"]
+
+MODEL_MISSING_VALUE = -1
+OUTPUT_KEY = "_model_prediction"
+DUAL_OUTPUT_KEY = "dual" + OUTPUT_KEY
+MERGED_OUTPUT_KEY = "merged" + OUTPUT_KEY
+SINGLE_IONIZATION_OUTPUT_KEY = "single" + OUTPUT_KEY
+
 from .classifier import process_spectra
 
-# Import and expose key classes and functions
+# =============================================================================
+# Imports - AFTER constants are defined
+# =============================================================================
 from .config import ModelConfig, get_config_data
 from .data_canonizer import DataCanonizer
 from .models import (
@@ -19,6 +46,9 @@ from .models import (
     print_cache_info,
 )
 
+# =============================================================================
+# Public API
+# =============================================================================
 __all__ = [
     # Constants
     "N",
@@ -45,22 +75,3 @@ __all__ = [
     "print_cache_info",
     "get_config_data",
 ]
-
-
-TENSOR_PRINT_PRECISION = 4
-TENSOR_PRINT_SCI_MODE = False
-
-# Maximum number of rows outputted by an MS1/MS2 experiment
-N = 150
-# The number of channels (depth) outputted from the first layer of convolution
-C = 10
-
-LABEL_COLUMN = ["parent"]
-MZ_COLUMN = "mz"
-DATA_COLUMNS = [MZ_COLUMN] + ["MS1", "MS2"]
-
-MODEL_MISSING_VALUE = -1
-OUTPUT_KEY = "_model_prediction"
-DUAL_OUTPUT_KEY = "dual" + OUTPUT_KEY
-MERGED_OUTPUT_KEY = "merged" + OUTPUT_KEY
-SINGLE_IONIZATION_OUTPUT_KEY = "single" + OUTPUT_KEY
