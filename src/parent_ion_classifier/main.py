@@ -1,16 +1,23 @@
+import argparse
 import os
 import sys
-import argparse
 
 from .classifier import classify_parent_ions
-from .test import unittest
 from .models import (
-    download_model, download_models, print_model_status, 
-    get_available_models, get_model_groups, get_models_in_group,
-    check_and_download_models, get_model_info, clear_model_cache,
-    get_cache_info, print_cache_info, get_cache_directory, print_cache_directory,
-    get_missing_models, get_cached_models
+    check_and_download_models,
+    clear_model_cache,
+    download_model,
+    download_models,
+    get_available_models,
+    get_cached_models,
+    get_model_groups,
+    get_model_info,
+    get_models_in_group,
+    print_cache_directory,
+    print_cache_info,
+    print_model_status,
 )
+from .test import unittest
 
 
 def handle_model_download(args: argparse.Namespace) -> None:
@@ -56,12 +63,12 @@ def handle_model_status(args: argparse.Namespace) -> None:
             print(f"Repository: {info['repo_id']}")
             print(f"Revision: {info['revision']}")
             print(f"Cache directory: {info['cache_dir']}")
-            if info['groups']:
+            if info["groups"]:
                 print(f"Groups: {', '.join(info['groups'])}")
-            if info['cached'] and 'local_path' in info:
+            if info["cached"] and "local_path" in info:
                 print(f"Local Path: {info['local_path']}")
-                if 'file_size' in info:
-                    size_mb = info['file_size'] / (1024 * 1024)
+                if "file_size" in info:
+                    size_mb = info["file_size"] / (1024 * 1024)
                     print(f"File Size: {size_mb:.2f} MB")
         except Exception as e:
             print(f"Error getting model info: {e}", file=sys.stderr)
@@ -114,16 +121,16 @@ def handle_model_list(args: argparse.Namespace) -> None:
 
 def handle_model_cache(args: argparse.Namespace) -> None:
     """Handle model cache management commands."""
-    if args.action == 'clear':
+    if args.action == "clear":
         # Clear cache
         model_names = [args.model_name] if args.model_name else None
         success = clear_model_cache(model_names=model_names, confirm=not args.yes)
         if not success:
             sys.exit(1)
-    elif args.action == 'info':
+    elif args.action == "info":
         # Show cache info using the new print_cache_info function
         print_cache_info(verbose=args.verbose)
-    elif args.action == 'directory':
+    elif args.action == "directory":
         # Show cache directory
         print_cache_directory()
 
@@ -154,19 +161,25 @@ def handle_classify_cmd(parser: argparse.ArgumentParser, args: argparse.Namespac
     if not args.skip_model_check:
         print("Checking for required models...")
         # Check for production models (you can customize this based on your needs)
-        required_group = getattr(args, 'model_group', 'production_models')
+        required_group = getattr(args, "model_group", "production_models")
         try:
             groups = get_model_groups()
             if required_group in groups:
                 success = check_and_download_models(group_name=required_group)
             else:
                 # Fall back to checking specific models if group doesn't exist
-                required_models = ['DualModeMSNet', 'TopIntensityMSNet_merged', 
-                                 'TopIntensityMSNet_positive', 'TopIntensityMSNet_negative']
+                required_models = [
+                    "DualModeMSNet",
+                    "TopIntensityMSNet_merged",
+                    "TopIntensityMSNet_positive",
+                    "TopIntensityMSNet_negative",
+                ]
                 success = check_and_download_models(model_names=required_models)
-            
+
             if not success:
-                print("Failed to ensure required models are available. Use --skip-model-check to bypass.")
+                print(
+                    "Failed to ensure required models are available. Use --skip-model-check to bypass."
+                )
                 sys.exit(1)
             print("Required models verified.")
         except Exception as e:
@@ -180,7 +193,7 @@ def handle_classify_cmd(parser: argparse.ArgumentParser, args: argparse.Namespac
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the argument parser."""
     parser = argparse.ArgumentParser(
-        description='Parent Ion Classifier - Classify parent ions in mass spectrometry data',
+        description="Parent Ion Classifier - Classify parent ions in mass spectrometry data",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -225,138 +238,99 @@ Examples:
 
   # Run tests
   %(prog)s test
-        """
+        """,
     )
 
     # Create subparsers for different commands
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Classification command
-    classify_parser = subparsers.add_parser(
-        'classify', 
-        help='Classify parent ions from MS data'
-    )
+    classify_parser = subparsers.add_parser("classify", help="Classify parent ions from MS data")
     classify_parser.add_argument(
-        '-i', '--infile', 
+        "-i",
+        "--infile",
         required=True,
-        help="Path to the input file (a pickled dictionary of dictionaries)"
+        help="Path to the input file (a pickled dictionary of dictionaries)",
     )
     classify_parser.add_argument(
-        '-o', '--outfile', 
-        default='results.pkl', 
-        help="Path to the output file (default: 'results.pkl')"
+        "-o",
+        "--outfile",
+        default="results.pkl",
+        help="Path to the output file (default: 'results.pkl')",
     )
     classify_parser.add_argument(
-        '--overwrite', 
-        action='store_true', 
-        help="Allow overwriting the output file if it already exists"
+        "--overwrite",
+        action="store_true",
+        help="Allow overwriting the output file if it already exists",
     )
     classify_parser.add_argument(
-        '-n', '--norm', 
-        type=str, 
-        default='softmax_per_ionization', 
-        choices=['none', 'sigmoid', 'softmax', 'softmax_per_ionization'], 
-        help="Output normalization method (default: 'softmax_per_ionization')"
+        "-n",
+        "--norm",
+        type=str,
+        default="softmax_per_ionization",
+        choices=["none", "sigmoid", "softmax", "softmax_per_ionization"],
+        help="Output normalization method (default: 'softmax_per_ionization')",
     )
     classify_parser.add_argument(
-        '--reset_output_index',
-        action='store_true', 
-        help="Reset the output DataFrame's index"
+        "--reset_output_index", action="store_true", help="Reset the output DataFrame's index"
     )
     classify_parser.add_argument(
-        '--skip-model-check',
-        action='store_true', 
-        help="Skip automatic model availability check and download"
+        "--skip-model-check",
+        action="store_true",
+        help="Skip automatic model availability check and download",
     )
     classify_parser.add_argument(
-        '--model-group',
-        default='production_models',
-        help="Model group to check for classification (default: 'production_models')"
+        "--model-group",
+        default="production_models",
+        help="Model group to check for classification (default: 'production_models')",
     )
 
     # Model download command
     download_parser = subparsers.add_parser(
-        'download', 
-        help='Download models from Hugging Face Hub'
+        "download", help="Download models from Hugging Face Hub"
     )
     download_group = download_parser.add_mutually_exclusive_group()
     download_group.add_argument(
-        '--model', 
-        dest='model_name',
-        help="Name of specific model to download"
+        "--model", dest="model_name", help="Name of specific model to download"
     )
-    download_group.add_argument(
-        '--group', 
-        help="Download all models from a specific group"
-    )
+    download_group.add_argument("--group", help="Download all models from a specific group")
     download_parser.add_argument(
-        '--force', 
-        action='store_true', 
-        help="Force re-download even if model is already cached"
+        "--force", action="store_true", help="Force re-download even if model is already cached"
     )
 
     # Model status command
-    status_parser = subparsers.add_parser(
-        'status', 
-        help='Show model status information'
-    )
+    status_parser = subparsers.add_parser("status", help="Show model status information")
     status_group = status_parser.add_mutually_exclusive_group()
     status_group.add_argument(
-        '--model', 
-        dest='model_name',
-        help="Show detailed info for specific model"
+        "--model", dest="model_name", help="Show detailed info for specific model"
     )
-    status_group.add_argument(
-        '--group', 
-        help="Show status for models in specific group"
-    )
+    status_group.add_argument("--group", help="Show status for models in specific group")
 
     # Model list command
-    list_parser = subparsers.add_parser(
-        'list', 
-        help='List available models'
-    )
+    list_parser = subparsers.add_parser("list", help="List available models")
     list_parser.add_argument(
-        '--groups', 
-        action='store_true',
-        help="List model groups instead of individual models"
+        "--groups", action="store_true", help="List model groups instead of individual models"
     )
-    list_parser.add_argument(
-        '--group', 
-        help="List models in a specific group"
-    )
-    list_parser.add_argument(
-        '-v', '--verbose', 
-        action='store_true',
-        help="Show additional details"
-    )
+    list_parser.add_argument("--group", help="List models in a specific group")
+    list_parser.add_argument("-v", "--verbose", action="store_true", help="Show additional details")
 
     # Cache management command
-    cache_parser = subparsers.add_parser(
-        'cache', 
-        help='Manage model cache'
-    )
-    cache_subparsers = cache_parser.add_subparsers(dest='action', help='Cache actions')
-    
-    clear_parser = cache_subparsers.add_parser('clear', help='Clear cached models')
-    clear_parser.add_argument('--model', dest='model_name', help="Clear specific model")
-    clear_parser.add_argument('-y', '--yes', action='store_true', help="Don't ask for confirmation")
-    
-    info_parser = cache_subparsers.add_parser('info', help='Show cache information')
-    info_parser.add_argument('-v', '--verbose', action='store_true', help="Show file details")
-    
-    # New cache directory command
-    dir_parser = cache_subparsers.add_parser('directory', help='Show cache directory')
+    cache_parser = subparsers.add_parser("cache", help="Manage model cache")
+    cache_subparsers = cache_parser.add_subparsers(dest="action", help="Cache actions")
+
+    clear_parser = cache_subparsers.add_parser("clear", help="Clear cached models")
+    clear_parser.add_argument("--model", dest="model_name", help="Clear specific model")
+    clear_parser.add_argument("-y", "--yes", action="store_true", help="Don't ask for confirmation")
+
+    info_parser = cache_subparsers.add_parser("info", help="Show cache information")
+    info_parser.add_argument("-v", "--verbose", action="store_true", help="Show file details")
+
+    cache_subparsers.add_parser("directory", help="Show cache directory")
 
     # Test command
-    test_parser = subparsers.add_parser(
-        'test', 
-        help='Run unit tests'
-    )
+    test_parser = subparsers.add_parser("test", help="Run unit tests")
     test_parser.add_argument(
-        '--recreate-output',
-        action='store_true', 
-        help="Recreate test output files"
+        "--recreate-output", action="store_true", help="Recreate test output files"
     )
 
     return parser
@@ -374,26 +348,26 @@ def main() -> None:
 
     # Handle different commands
     try:
-        if args.command == 'classify':
+        if args.command == "classify":
             handle_classify_cmd(parser, args)
-        elif args.command == 'download':
+        elif args.command == "download":
             handle_model_download(args)
-        elif args.command == 'status':
+        elif args.command == "status":
             handle_model_status(args)
-        elif args.command == 'list':
+        elif args.command == "list":
             handle_model_list(args)
-        elif args.command == 'cache':
+        elif args.command == "cache":
             if args.action:
                 handle_model_cache(args)
             else:
-                cache_parser = parser._subparsers._group_actions[0].choices['cache']
+                cache_parser = parser._subparsers._group_actions[0].choices["cache"]
                 cache_parser.print_help()
-        elif args.command == 'test':
+        elif args.command == "test":
             unittest(args.recreate_output)
         else:
             parser.print_help()
             sys.exit(1)
-            
+
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.")
         sys.exit(1)

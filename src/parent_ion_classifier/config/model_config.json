@@ -7,7 +7,7 @@
       "description": "Test model for single ionization mode - used for unit testing and validation"
     },
     "test_dual": {
-      "filename": "test_dual.pt_jit", 
+      "filename": "test_dual.pt_jit",
       "description": "Test model for dual ionization mode - used for unit testing and validation"
     },
     "DualModeMSNet": {

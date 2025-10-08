@@ -7,15 +7,15 @@ and caching functionality.
 """
 
 from __future__ import annotations
+
 import sys
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import torch
 from huggingface_hub.utils import LocalEntryNotFoundError
 
 from ..config import get_config_data
 from .manager import ModelManager
-
 
 # Global model manager instance (initialized lazily)
 _model_manager: Optional[ModelManager] = None
@@ -24,7 +24,7 @@ _model_manager: Optional[ModelManager] = None
 def get_model_manager() -> ModelManager:
     """
     Get the global ModelManager instance, initializing it if needed.
-    
+
     Returns:
         The global ModelManager instance
     """
@@ -32,14 +32,14 @@ def get_model_manager() -> ModelManager:
     if _model_manager is None:
         config_data = get_config_data()
         _model_manager = ModelManager(config_data)
-    
+
     return _model_manager
 
 
 def get_cache_directory() -> str:
     """
     Get the current cache directory being used.
-    
+
     Returns:
         Path to the cache directory
     """
@@ -74,10 +74,10 @@ def get_model_groups() -> List[str]:
 def get_models_in_group(group_name: str) -> List[str]:
     """
     Get models belonging to a specific group.
-    
+
     Args:
         group_name: Name of the model group
-        
+
     Returns:
         List of model names in the group
     """
@@ -87,10 +87,10 @@ def get_models_in_group(group_name: str) -> List[str]:
 def is_model_cached(model_name: str) -> bool:
     """
     Check if a model is cached locally.
-    
+
     Args:
         model_name: Name of the model to check
-        
+
     Returns:
         True if cached, False otherwise
     """
@@ -100,11 +100,11 @@ def is_model_cached(model_name: str) -> bool:
 def download_model(model_name: str, force: bool = False) -> str:
     """
     Download a specific model.
-    
+
     Args:
         model_name: Name of the model to download
         force: If True, re-download even if cached
-        
+
     Returns:
         Path to the downloaded model
     """
@@ -112,44 +112,39 @@ def download_model(model_name: str, force: bool = False) -> str:
 
 
 def download_models(
-    model_names: Optional[List[str]] = None,
-    group_name: Optional[str] = None,
-    force: bool = False
+    model_names: Optional[List[str]] = None, group_name: Optional[str] = None, force: bool = False
 ) -> Dict[str, str]:
     """
     Download multiple models.
-    
+
     Args:
         model_names: Specific models to download. If None, downloads all models.
         group_name: Download models from a specific group. Ignored if model_names is provided.
         force: If True, re-download even if cached
-        
+
     Returns:
         Dictionary mapping model names to local paths
     """
     return get_model_manager().download_models(
-        model_names=model_names,
-        group_name=group_name,
-        force=force
+        model_names=model_names, group_name=group_name, force=force
     )
 
 
 def check_and_download_models(
-    model_names: Optional[List[str]] = None,
-    group_name: Optional[str] = None
+    model_names: Optional[List[str]] = None, group_name: Optional[str] = None
 ) -> bool:
     """
     Check for missing models and download them.
-    
+
     Args:
         model_names: Specific models to check. If None, checks all models.
         group_name: Check models from a specific group. Ignored if model_names is provided.
-        
+
     Returns:
         True if all specified models are available, False otherwise
     """
     manager = get_model_manager()
-    
+
     # Determine which models to check
     if model_names is not None:
         models_to_check = model_names
@@ -157,13 +152,13 @@ def check_and_download_models(
         models_to_check = manager.get_models_in_group(group_name)
     else:
         models_to_check = manager.get_available_models()
-    
+
     # Find missing models
     missing_models = []
     for model_name in models_to_check:
         if not manager.is_model_cached(model_name):
             missing_models.append(model_name)
-    
+
     if missing_models:
         print(f"Missing models: {missing_models}")
         print("Downloading missing models...")
@@ -173,15 +168,15 @@ def check_and_download_models(
         except Exception as e:
             print(f"Failed to download missing models: {e}", file=sys.stderr)
             return False
-    
+
     return True
 
 
 def load_jit_model(
-    model_type: str, 
-    device: str = "cpu", 
+    model_type: str,
+    device: str = "cpu",
     local_files_only: bool | None = None,
-    auto_download: bool = True
+    auto_download: bool = True,
 ) -> torch.jit.ScriptModule:
     """
     Loads a TorchScript model from the Hugging Face Hub, with a cache-first approach.
@@ -202,7 +197,7 @@ def load_jit_model(
         LocalEntryNotFoundError: If the model is not in the local cache and downloading is disabled
     """
     manager = get_model_manager()
-    
+
     if model_type not in manager.config.models:
         raise ValueError(f"Unknown model type '{model_type}', available: {get_available_models()}")
 
@@ -214,26 +209,19 @@ def load_jit_model(
     # If local_files_only is None, use the auto_download parameter
 
     # Try to load the model
-    model = manager.load_model(
-        model_type, 
-        device=device, 
-        auto_download=auto_download
-    )
-    
+    model = manager.load_model(model_type, device=device, auto_download=auto_download)
+
     if model is None:
         if local_files_only is True or not auto_download:
             raise LocalEntryNotFoundError(f"Model '{model_type}' not found in local cache")
         else:
             raise RuntimeError(f"Failed to load model '{model_type}'")
-    
+
     return model
 
 
 def load_model(
-    model_type: str, 
-    device: str = "cpu", 
-    raise_exception: bool = False,
-    auto_download: bool = True
+    model_type: str, device: str = "cpu", raise_exception: bool = False, auto_download: bool = True
 ) -> torch.jit.ScriptModule | None:
     """
     A user-facing function to load a pre-trained model with optional error handling.
@@ -259,17 +247,14 @@ def load_model(
             return None
 
 
-def clear_model_cache(
-    model_names: Optional[List[str]] = None,
-    confirm: bool = True
-) -> bool:
+def clear_model_cache(model_names: Optional[List[str]] = None, confirm: bool = True) -> bool:
     """
     Clear cached models from local storage.
-    
+
     Args:
         model_names: Specific models to clear. If None, clears all models.
         confirm: If True, asks for confirmation before clearing
-        
+
     Returns:
         True if successful, False otherwise
     """
@@ -279,7 +264,7 @@ def clear_model_cache(
 def get_cache_info() -> Dict[str, Any]:
     """
     Get information about cached models and disk usage.
-    
+
     Returns:
         Dictionary with cache information including cache directory
     """
@@ -289,29 +274,29 @@ def get_cache_info() -> Dict[str, Any]:
 def print_cache_info(verbose: bool = False) -> None:
     """
     Print cache information in a user-friendly format.
-    
+
     Args:
         verbose: If True, show detailed file information
     """
     cache_info = get_cache_info()
-    
+
     print(f"Cache directory: {cache_info['cache_dir']}")
     print(f"Repository: {cache_info['repo_id']}")
     print(f"Revision: {cache_info['revision']}")
-    
-    if cache_info.get('error'):
+
+    if cache_info.get("error"):
         print(f"Error: {cache_info['error']}")
         return
-    
-    if cache_info.get('cached'):
-        size_mb = cache_info['total_size'] / (1024 * 1024)
+
+    if cache_info.get("cached"):
+        size_mb = cache_info["total_size"] / (1024 * 1024)
         print(f"Total cache size: {size_mb:.1f} MB")
         print(f"Number of files: {cache_info['file_count']}")
-        
-        if verbose and cache_info.get('files'):
+
+        if verbose and cache_info.get("files"):
             print("\nCached files:")
-            for file_info in cache_info['files']:
-                file_size_mb = file_info['size'] / (1024 * 1024)
+            for file_info in cache_info["files"]:
+                file_size_mb = file_info["size"] / (1024 * 1024)
                 print(f"  {file_info['filename']} ({file_size_mb:.1f} MB)")
     else:
         print("No cached files found")
@@ -320,7 +305,7 @@ def print_cache_info(verbose: bool = False) -> None:
 def print_model_status(group_name: Optional[str] = None) -> None:
     """
     Print status of models.
-    
+
     Args:
         group_name: Optional group name to show only models in that group
     """
@@ -330,10 +315,10 @@ def print_model_status(group_name: Optional[str] = None) -> None:
 def get_model_info(model_name: str) -> Dict[str, Any]:
     """
     Get detailed information about a specific model.
-    
+
     Args:
         model_name: Name of the model
-        
+
     Returns:
         Dictionary with model information including cache directory
     """
@@ -343,10 +328,10 @@ def get_model_info(model_name: str) -> Dict[str, Any]:
 def get_missing_models(group_name: Optional[str] = None) -> List[str]:
     """
     Get list of models that are not cached.
-    
+
     Args:
         group_name: Optional group name to check only models in that group
-        
+
     Returns:
         List of missing model names
     """
@@ -356,7 +341,7 @@ def get_missing_models(group_name: Optional[str] = None) -> List[str]:
 def get_cached_models() -> List[str]:
     """
     Get list of models that are currently cached.
-    
+
     Returns:
         List of cached model names
     """

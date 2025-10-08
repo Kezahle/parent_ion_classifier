@@ -1,37 +1,57 @@
+"""
+Unit Testing Module for Parent Ion Classifier
+
+This module provides comprehensive testing functionality for the spectra
+processing pipeline, including cross-platform compatibility checks and
+deterministic behavior validation.
+"""
+
 import os
 import sys
-import pandas as pd
-import numpy as np
+from typing import Any, Dict
 
-from .utils import unpickle_file, pickle_file
-from .classifier import process_spectra, MSNetModels
+import numpy as np
+import pandas as pd
+
+from .classifier import MSNetModels, process_spectra
 from .models import load_model
-from .config import get_config_data
-from huggingface_hub import delete_folder
+from .utils import pickle_file, unpickle_file
+
 
 class DictComparisonError(Exception):
     """Custom exception for dictionary comparison mismatches."""
+
     pass
 
+
 def compare_dicts(
-    dict1: dict, 
-    dict2: dict, 
+    dict1: Dict[str, Any],
+    dict2: Dict[str, Any],
     path: str = "",
     rtol: float = 1e-4,  # 0.01% relative tolerance for cross-platform compatibility
-    atol: float = 1e-6   # Absolute tolerance for values near zero
-):
+    atol: float = 1e-6,  # Absolute tolerance for values near zero
+) -> None:
     """
     Compare two dictionaries recursively with platform-appropriate tolerances.
-    
+
+    This function performs deep comparison of nested dictionaries, handling
+    DataFrames and floating-point values with configurable tolerances to
+    ensure cross-platform reproducibility.
+
     Args:
-        dict1 (dict): The first dictionary.
-        dict2 (dict): The second dictionary.
-        path (str): Path to the current key for debugging purposes.
-        rtol (float): Relative tolerance for floating-point comparisons.
-        atol (float): Absolute tolerance for floating-point comparisons.
+        dict1: The first dictionary to compare
+        dict2: The second dictionary to compare
+        path: Current path in the nested structure (for error messages)
+        rtol: Relative tolerance for floating-point comparisons (0.01% default)
+        atol: Absolute tolerance for floating-point comparisons (for near-zero values)
 
     Raises:
-        DictComparisonError: If there is a mismatch in keys or values.
+        DictComparisonError: If there is a mismatch in keys or values
+
+    Example:
+        >>> d1 = {'a': 1.0, 'b': pd.DataFrame({'x': [1, 2]})}
+        >>> d2 = {'a': 1.000001, 'b': pd.DataFrame({'x': [1, 2]})}
+        >>> compare_dicts(d1, d2)  # Passes with default tolerance
     """
     # Check for key mismatches
     if set(dict1.keys()) != set(dict2.keys()):
@@ -58,8 +78,7 @@ def compare_dicts(
             except AssertionError as e:
                 diff_report = get_dataframe_differences(val1, val2, rtol=rtol, atol=atol)
                 raise DictComparisonError(
-                    f"DataFrames mismatch at path '{current_path}':\n"
-                    f"{diff_report}"
+                    f"DataFrames mismatch at path '{current_path}':\n{diff_report}"
                 ) from e
 
         # Handle floating-point numbers (with tolerance)
@@ -71,27 +90,33 @@ def compare_dicts(
 
         # Handle other types
         elif val1 != val2:
-            raise DictComparisonError(
-                f"Value mismatch at path '{current_path}': {val1} != {val2}"
-            )
+            raise DictComparisonError(f"Value mismatch at path '{current_path}': {val1} != {val2}")
+
 
 def get_dataframe_differences(
-    df1: pd.DataFrame, 
-    df2: pd.DataFrame, 
-    rtol: float = 1e-4,
-    atol: float = 1e-6
-):
+    df1: pd.DataFrame, df2: pd.DataFrame, rtol: float = 1e-4, atol: float = 1e-6
+) -> str:
     """
     Generate a detailed report of differences between two DataFrames.
-    
+
+    This function provides human-readable diagnostics when DataFrames don't match,
+    showing specific rows and columns where differences occur.
+
     Args:
-        df1 (pd.DataFrame): The first DataFrame.
-        df2 (pd.DataFrame): The second DataFrame.
-        rtol (float): The relative tolerance for floating-point comparisons.
-        atol (float): The absolute tolerance for floating-point comparisons.
+        df1: The first DataFrame to compare
+        df2: The second DataFrame to compare
+        rtol: Relative tolerance for floating-point comparisons
+        atol: Absolute tolerance for floating-point comparisons
 
     Returns:
-        str: A detailed report of the differences.
+        A detailed string report of the differences found
+
+    Example:
+        >>> df1 = pd.DataFrame({'x': [1.0, 2.0]})
+        >>> df2 = pd.DataFrame({'x': [1.1, 2.0]})
+        >>> report = get_dataframe_differences(df1, df2)
+        >>> print(report)
+        Column 'x' differs at 1 rows...
     """
     diff_report = []
 
@@ -110,7 +135,7 @@ def get_dataframe_differences(
         series2 = df2[column]
 
         # Compare values
-        if series1.dtype.kind in 'fc' and series2.dtype.kind in 'fc':  # Floating-point or complex
+        if series1.dtype.kind in "fc" and series2.dtype.kind in "fc":  # Floating-point or complex
             # Use equal_nan=True to treat NaN values as equal
             mismatches = ~np.isclose(series1, series2, rtol=rtol, atol=atol, equal_nan=True)
         else:
@@ -118,7 +143,7 @@ def get_dataframe_differences(
 
         if mismatches.any():
             diff_indices = np.where(mismatches)[0]
-            
+
             # Show first few mismatches with actual values
             num_examples = min(5, len(diff_indices))
             sample_indices = diff_indices[:num_examples]
@@ -127,15 +152,18 @@ def get_dataframe_differences(
                 val1 = series1.iloc[idx]
                 val2 = series2.iloc[idx]
                 if isinstance(val1, (float, np.floating)):
-                    examples.append(f"row {idx}: {val1:.6e} vs {val2:.6e} (diff: {abs(val1-val2):.6e})")
+                    examples.append(
+                        f"row {idx}: {val1:.6e} vs {val2:.6e} (diff: {abs(val1-val2):.6e})"
+                    )
                 else:
                     examples.append(f"row {idx}: {val1} vs {val2}")
-            
+
             diff_report.append(
-                f"Column '{column}' differs at {len(diff_indices)} rows (tolerance: rtol={rtol}, atol={atol}).\n"
+                f"Column '{column}' differs at {len(diff_indices)} rows "
+                f"(tolerance: rtol={rtol}, atol={atol}).\n"
                 f"  Examples:\n  " + "\n  ".join(examples)
             )
-            
+
             if len(diff_indices) > num_examples:
                 diff_report.append(f"  ... and {len(diff_indices) - num_examples} more")
 
@@ -149,22 +177,35 @@ def get_dataframe_differences(
         return "No differences detected."
     return "\n".join(diff_report)
 
-def unittest(recreate_test_output: bool = False):
-    """
-    Runs unit tests for the spectra processing pipeline.
 
-    This function performs the following:
-        1. Loads test models for single and dual ionization.
-        2. Iterates over different normalization methods to process spectra.
-        3. Compares processed spectra against expected outputs with platform-appropriate tolerances.
+def unittest(recreate_test_output: bool = False) -> None:
+    """
+    Run comprehensive unit tests for the spectra processing pipeline.
+
+    This function performs the following validation steps:
+        1. Loads test models for single and dual ionization modes
+        2. Iterates over different normalization methods to process spectra
+        3. Compares processed spectra against expected outputs with platform-appropriate tolerances
+        4. Optionally recreates test outputs if they're missing or outdated
 
     Args:
-        recreate_test_output (bool): If True, missing or failed test outputs are recreated. 
-                                     Otherwise, the test fails with an error.
+        recreate_test_output: If True, missing or failed test outputs are recreated.
+                             Otherwise, the test fails with an error.
 
     Raises:
-        SystemExit: If a model or input/output spectra file cannot be loaded 
-                    and `recreate_test_output` is False.
+        SystemExit: If a model or input/output spectra file cannot be loaded
+                   and recreate_test_output is False, or if tests fail.
+
+    Example:
+        >>> # Run tests with existing outputs
+        >>> unittest()
+        >>>
+        >>> # Recreate test outputs (for development)
+        >>> unittest(recreate_test_output=True)
+
+    Note:
+        This function uses relaxed tolerances (rtol=1e-4, atol=1e-6) to ensure
+        cross-platform reproducibility between different systems and PyTorch versions.
     """
 
     print("=" * 80)
@@ -172,27 +213,27 @@ def unittest(recreate_test_output: bool = False):
     print("=" * 80)
 
     # Determine the input root directory for test data
-    input_root = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test'))
+    input_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "test"))
 
     # Load test models
     print("Loading test models...")
     models = MSNetModels(
-        load_model('test_single', raise_exception=True),
-        load_model('test_single', raise_exception=True),
-        load_model('test_single', raise_exception=True),
-        load_model('test_dual', raise_exception=True)
+        load_model("test_single", raise_exception=True),
+        load_model("test_single", raise_exception=True),
+        load_model("test_single", raise_exception=True),
+        load_model("test_dual", raise_exception=True),
     )
     print("Test models loaded successfully.")
 
-    # Define normalization methods
-    normalization_methods = ['none', 'sigmoid', 'softmax', 'softmax_per_ionization']
+    # Define normalization methods to test
+    normalization_methods = ["none", "sigmoid", "softmax", "softmax_per_ionization"]
 
     for normalization_method in normalization_methods:
         print(f"\nTesting normalization method: {normalization_method}")
-        
+
         try:
             # Load input spectra
-            in_path = os.path.join(input_root, 'spectra_dict.pkl')
+            in_path = os.path.join(input_root, "spectra_dict.pkl")
             spectra_dict = unpickle_file(in_path)
         except Exception as e:
             print(f"Failed to load input spectra from '{in_path}' - {e}")
@@ -200,7 +241,7 @@ def unittest(recreate_test_output: bool = False):
 
         try:
             # Load expected output spectra
-            out_path = os.path.join(input_root, f'spectra_dict_{normalization_method}_norm.pkl')
+            out_path = os.path.join(input_root, f"spectra_dict_{normalization_method}_norm.pkl")
             out_spectra_dict = unpickle_file(out_path)
         except Exception as e:
             if recreate_test_output:
@@ -215,10 +256,10 @@ def unittest(recreate_test_output: bool = False):
                 sys.exit(-1)
 
         # Process spectra and compare against expected output
-        print(f"  Processing spectra...")
+        print("  Processing spectra...")
         process_spectra(normalization_method, models, spectra_dict)
-        
-        print(f"  Comparing results (rtol=1e-4, atol=1e-6)...")
+
+        print("  Comparing results (rtol=1e-4, atol=1e-6)...")
         try:
             compare_dicts(spectra_dict, out_spectra_dict, path=normalization_method)
             print(f"  ✓ {normalization_method}: PASSED")
