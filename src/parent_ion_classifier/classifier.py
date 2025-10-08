@@ -24,9 +24,9 @@ from . import (
     MERGED_OUTPUT_KEY,
     MODEL_MISSING_VALUE,
     SINGLE_IONIZATION_OUTPUT_KEY,
-    DataCanonizer,
     N,
 )
+from .data_canonizer import DataCanonizer
 from .models import load_model
 from .utils import pickle_file, unpickle_file
 
