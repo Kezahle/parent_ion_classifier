@@ -29,7 +29,7 @@ initialize_conda() {
         "$HOME/anaconda3"
         "$HOME/miniconda3"
     )
-    
+
     for CONDA_BASE in "${CONDA_BASES[@]}"; do
         if [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ]; then
             echo "Initializing conda from: $CONDA_BASE/etc/profile.d/conda.sh"
@@ -37,13 +37,13 @@ initialize_conda() {
             return 0
         fi
     done
-    
+
     # If conda is already available (already initialized)
     if command -v conda >/dev/null 2>&1; then
         echo "Conda command already available"
         return 0
     fi
-    
+
     echo "Could not find conda installation"
     return 1
 }
