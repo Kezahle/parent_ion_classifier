@@ -4,25 +4,20 @@ package:
 
 source:
   path: ..
-  license_file: LICENSE
 
 build:
+  noarch: python
   number: 0
   script: "{{ PYTHON }} -m pip install . -vv"
+  entry_points:
+    - parent-ion-classifier = parent_ion_classifier.main:main
+    - classify_parent_ion = parent_ion_classifier.main:main
 
 requirements:
   host:
     - python >=3.10
     - setuptools
     - pip
-    - tqdm
-    - requests
-    - numpy
-    - pandas
-    - onnx
-    - seaborn
-    - matplotlib
-    - huggingface_hub >=0.23
   run:
     - python >=3.10
     - pytorch-cpu >=2.2.0
@@ -41,14 +36,21 @@ test:
     - parent_ion_classifier
     - torch
   commands:
+    - parent-ion-classifier --help
+    - classify_parent_ion --help
     # Uncomment to run the unittest as part of the build
     # This is sensitive to OS/python/numpy version so should be careful
     # - classify_parent_ion --test
-    - classify_parent_ion --help
 
 about:
-  # home: https://github.com/your_username/your_package_name
+  home: https://github.com/Kezahle/parent_ion_classifier
   license: MIT
   license_family: MIT
   license_file: LICENSE
   summary: 'A package for classifying parent ions in mass spectrometry (MS/MS) experiments, developed as part of a research thesis at the Open university of Israel with collaboration with Weizmann Institute of Science. It leverages deep learning models to detect and classify parent ions from MS data, providing insights for chemical analysis and compound identification.'
+  description: |
+    Parent Ion Classifier uses deep learning to analyze mass spectrometry data
+    and classify parent ions. Models are downloaded on-demand from HuggingFace,
+    keeping the package lightweight and always up-to-date.
+  dev_url: https://github.com/Kezahle/parent_ion_classifier
+  doc_url: https://github.com/Kezahle/parent_ion_classifier/blob/main/README.md
