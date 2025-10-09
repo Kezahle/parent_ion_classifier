@@ -4,22 +4,37 @@ Thank you for your interest in contributing to the Parent Ion Classifier project
 
 ## Development Setup
 
-1. **Clone the repository**
+### Prerequisites
+
+- [Anaconda](https://www.anaconda.com/products/distribution) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html) installed
+- Git
+- A GitHub account
+
+### Quick Start
+
+1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/Kezahle/parent_ion_classifier.git
+   # Fork on GitHub first, then:
+   git clone https://github.com/YOUR_USERNAME/parent_ion_classifier.git
    cd parent_ion_classifier
    ```
 
-2. **Create a development environment**
+2. **Create development environment**
    ```bash
-   conda create -n parent_classifier_dev python=3.12
+   # Create environment from YAML file
+   conda env create -f environment.yml
+   
+   # Activate the environment
    conda activate parent_classifier_dev
-   conda install -y conda-build
    ```
 
-3. **Install with development dependencies**
+3. **Install package in development mode**
    ```bash
-   pip install -e ".[dev]"
+   # Install with pip in editable mode
+   pip install -e .
+   
+   # Verify installation
+   parent-ion-classifier --help
    ```
 
 4. **Set up pre-commit hooks** (Recommended)
@@ -34,80 +49,182 @@ Thank you for your interest in contributing to the Parent Ion Classifier project
    - Validate YAML/TOML files
    - Remove trailing whitespace
 
-5. **Build and test**
+5. **Download models for testing**
    ```bash
-   # Build the package only
-   ./scripts/build_and_test.sh build
-
-   # Set up test environment only
-   ./scripts/build_and_test.sh test
-
-   # Build package and set up test environment
-   ./scripts/build_and_test.sh all
+   parent-ion-classifier download --group test_models
    ```
+
+## Development Environment Details
+
+The `environment.yml` file includes:
+
+**Build Tools:**
+- conda-build (for building conda packages)
+- setuptools, pip
+
+**Runtime Dependencies:**
+- pytorch-cpu ≥2.2.0
+- numpy, pandas
+- huggingface_hub ≥0.23
+- scikit-learn, matplotlib, seaborn
+- tqdm, requests, onnx
+
+**Development Tools:**
+- pytest (testing)
+- black, isort, ruff (code formatting and linting)
+- mypy (type checking)
+- pre-commit (git hooks)
+- ipython (interactive development)
+
+**Documentation:**
+- sphinx, sphinx_rtd_theme
+
+## Building the Conda Package
+
+If you need to build a conda package for distribution:
+
+### Use conda-build directly
+
+```bash
+# Activate development environment
+conda activate parent_classifier_dev
+
+# Build the package
+conda build conda-recipe --output-folder bin
+
+# Check the output
+ls -lh bin/noarch/
+```
+
+### Installing Your Built Package
+
+```bash
+# Create test environment
+conda create -n test_install python=3.10
+conda activate test_install
+
+# Install from local build
+conda install parent_ion_classifier -c file://$(pwd)/bin
+
+# Test installation
+parent-ion-classifier --help
+parent-ion-classifier test
+```
 
 ## Code Style
 
-- Follow PEP 8 guidelines
-- Use snake_case for functions and variables
-- Use descriptive variable names
-- Add type hints to all functions
-- Add docstrings to all public functions and classes
-- Keep lines under 100 characters
+We follow these style guidelines:
+
+- **PEP 8** for general Python style
+- **snake_case** for functions and variables
+- **Type hints** on all function signatures
+- **Docstrings** for all public functions and classes (Google style)
+- **Line length**: 100 characters maximum
+- **Single quotes** for all error messages and strings in code
 
 **Pre-commit hooks will automatically enforce most style rules!**
 
+### Example of Good Code Style
+
+```python
+def process_spectrum(
+    spectrum_id: str,
+    positive_df: pd.DataFrame | None,
+    negative_df: pd.DataFrame | None,
+    normalization: str = 'softmax_per_ionization'
+) -> dict:
+    """
+    Process a single spectrum with given normalization.
+    
+    Args:
+        spectrum_id: Unique identifier for the spectrum
+        positive_df: DataFrame with positive mode data, or None
+        negative_df: DataFrame with negative mode data, or None
+        normalization: Normalization method to apply
+        
+    Returns:
+        Dictionary containing processed spectrum with predictions
+        
+    Raises:
+        ValueError: If both positive_df and negative_df are None
+        
+    Example:
+        >>> df = pd.DataFrame({'mz': [100], 'MS1': [1000], 'MS2': [2000]})
+        >>> result = process_spectrum('001', df, None)
+    """
+    if positive_df is None and negative_df is None:
+        raise ValueError(f'Spectrum {spectrum_id} must have at least one mode')
+    
+    # Implementation here
+    return result
+```
+
 ## Making Changes
 
-1. **Create a new branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+### 1. Create a Feature Branch
 
-2. **Make your changes**
-   - Write clear, descriptive commit messages
-   - Add type hints to new functions
-   - Add tests for new functionality
-   - Update documentation as needed
+```bash
+git checkout -b feature/your-feature-name
+```
 
-3. **Test your changes**
-   ```bash
-   # Run pre-commit checks
-   pre-commit run --all-files
+Use descriptive branch names:
+- `feature/add-new-model-support`
+- `fix/normalization-bug`
+- `docs/improve-api-reference`
 
-   # Build and test the package
-   ./scripts/build_and_test.sh all
+### 2. Make Your Changes
 
-   # Run the unit tests
-   conda activate test_env
-   parent-ion-classifier test
-   ```
+- Write clear, self-documenting code
+- Add type hints to all functions
+- Write docstrings for public APIs
+- Add tests for new functionality
+- Update documentation as needed
 
-4. **Commit and push**
-   ```bash
-   git add .
-   git commit -m "Description of your changes"
-   # Pre-commit hooks run automatically here!
+### 3. Test Your Changes
 
-   git push origin feature/your-feature-name
-   ```
+```bash
+# Run pre-commit checks
+pre-commit run --all-files
 
-5. **Submit a Pull Request**
-   - Provide a clear description of the changes
-   - Reference any related issues
-   - Ensure all tests pass
-   - Ensure pre-commit checks pass
+# Run unit tests
+parent-ion-classifier test
+
+# Test manually
+parent-ion-classifier classify -i test_data.pkl -o output.pkl
+
+# Test in fresh environment (optional but recommended)
+conda create -n test_changes python=3.10
+conda activate test_changes
+pip install -e .
+parent-ion-classifier test
+```
+
+### 4. Commit Your Changes
+
+```bash
+git add .
+git commit -m "Add feature: description of changes"
+# Pre-commit hooks run automatically here!
+```
+
+Write clear commit messages:
+- Start with a verb: "Add", "Fix", "Update", "Remove"
+- Be specific: "Fix sigmoid normalization for dual-mode spectra"
+- Reference issues if applicable: "Fix #123: Handle empty dataframes"
+
+### 5. Push and Create Pull Request
+
+```bash
+git push origin feature/your-feature-name
+```
+
+Then create a Pull Request on GitHub:
+- Provide a clear description of changes
+- Reference related issues
+- Include screenshots for UI changes
+- List any breaking changes
 
 ## Code Quality Tools
-
-We use several tools to maintain code quality:
-
-- **black**: Code formatter (100 character line length)
-- **isort**: Import sorter
-- **ruff**: Fast Python linter
-- **mypy**: Type checker (optional, not enforced yet)
-
-These run automatically via pre-commit hooks before each commit.
 
 ### Running Quality Checks Manually
 
@@ -115,134 +232,246 @@ These run automatically via pre-commit hooks before each commit.
 # Run all pre-commit hooks
 pre-commit run --all-files
 
-# Run specific hooks
-pre-commit run black --all-files
-pre-commit run ruff --all-files
-
 # Format code
-black src/
-isort src/
+black src/ tests/
+isort src/ tests/
 
-# Check types (if mypy is configured)
+# Lint code
+ruff check src/ tests/
+
+# Type check (optional)
 mypy src/
 ```
+
+### Pre-commit Hook Configuration
+
+The `.pre-commit-config.yaml` file includes:
+- **black**: Code formatter (100 char lines)
+- **isort**: Import sorter
+- **ruff**: Fast Python linter
+- **trailing-whitespace**: Remove trailing spaces
+- **end-of-file-fixer**: Ensure newline at EOF
+- **check-yaml**: Validate YAML files
+- **check-toml**: Validate TOML files
 
 ## Testing
 
 ### Running Tests
 
 ```bash
+# Run built-in tests
 parent-ion-classifier test
+
+# Run with pytest (if you add more tests)
+pytest tests/ -v
 ```
 
 ### Adding New Tests
 
 When adding new functionality:
-1. Add test data to `src/parent_ion_classifier/test/`
-2. Update test cases in `test.py`
-3. Ensure tests pass on both Mac and Linux
+
+1. **Add test data** to `src/parent_ion_classifier/test/`
+2. **Update test cases** in `src/parent_ion_classifier/test.py`
+3. **Ensure tests pass** on your platform
+4. **Test cross-platform** if possible (Linux, macOS, Windows)
+
+### Writing Good Tests
+
+```python
+def test_normalization_methods():
+    """Test that all normalization methods work correctly."""
+    # Arrange
+    spectra_dict = create_test_spectra()
+    models = load_test_models()
+    
+    # Act
+    for method in ['none', 'sigmoid', 'softmax', 'softmax_per_ionization']:
+        process_spectra(method, models, spectra_dict)
+        
+        # Assert
+        assert 'single_model_prediction' in spectra_dict['001']
+        assert spectra_dict['001']['single_model_prediction'] is not None
+```
 
 ### Cross-Platform Testing
 
-The project aims for reproducibility across platforms. When making changes:
-- Test on both macOS and Linux if possible
-- Ensure deterministic behavior (avoid platform-specific sorting/randomness)
-- Use appropriate tolerances for floating-point comparisons (rtol=1e-4, atol=1e-6)
+The project aims for reproducibility across platforms:
+- Test on Linux and macOS if possible
+- Ensure deterministic behavior
+- Use appropriate tolerances for float comparisons: `rtol=1e-4, atol=1e-6`
+- Avoid platform-specific operations
 
 ## Type Hints
 
 All new code should include type hints:
 
 ```python
-# Good
-def process_data(input_path: str, max_size: int = 100) -> pd.DataFrame:
-    """Process data from file."""
+from typing import Optional, Dict, List
+import pandas as pd
+
+# Good - with type hints
+def load_spectra(path: str, validate: bool = True) -> Dict[str, pd.DataFrame]:
+    """Load spectra from file."""
     pass
 
 # Bad - no type hints
-def process_data(input_path, max_size=100):
-    """Process data from file."""
+def load_spectra(path, validate=True):
+    """Load spectra from file."""
     pass
 ```
 
-Type hints help:
-- Catch bugs before runtime
-- Improve IDE autocomplete
-- Serve as inline documentation
+Use modern Python type hints:
+- `str | None` instead of `Optional[str]` (Python 3.10+)
+- `list[str]` instead of `List[str]` (Python 3.10+)
+- `dict[str, int]` instead of `Dict[str, int]` (Python 3.10+)
 
 ## Documentation
 
-- Update README.md for user-facing changes
-- Add docstrings with type information to new functions/classes
-- Update docs/ for significant features
-- Include examples in docstrings
+### Docstring Style
 
-**Example docstring:**
+We use Google-style docstrings:
 
 ```python
-def canonise_and_truncate_df(
-    self,
-    in_df: pd.DataFrame,
-    reset_index: bool = False,
-    sort_by_MS2_first: bool = True
+def canonize_spectrum(
+    df: pd.DataFrame,
+    n_peaks: int = 150,
+    sort_by_ms2: bool = True
 ) -> pd.DataFrame:
     """
-    Complete canonization pipeline for MS data.
-
-    This is the main entry point for data preprocessing. It performs:
-    1. Data validation
-    2. m/z rounding
-    3. Deterministic sorting by intensity
-    4. Truncation to top-N rows
-
+    Canonize MS spectrum for model input.
+    
+    This function standardizes the input spectrum by sorting peaks,
+    selecting top-N by intensity, and normalizing values.
+    
     Args:
-        in_df: Input DataFrame with columns matching data_columns
-        reset_index: Whether to reset index after processing
-        sort_by_MS2_first: If True, sort by MS2 then MS1; otherwise MS1 then MS2
-
+        df: Input DataFrame with columns ['mz', 'MS1', 'MS2']
+        n_peaks: Number of peaks to keep (default: 150)
+        sort_by_ms2: If True, sort by MS2 intensity first (default: True)
+        
     Returns:
-        Canonized DataFrame with exactly N rows, ready for model input
-
+        Canonized DataFrame with exactly n_peaks rows
+        
     Raises:
-        AssertionError: If input validation fails
-
+        ValueError: If df doesn't contain required columns
+        
     Example:
-        >>> dc = DataCanonizer(N=150, data_columns=['mz', 'MS1', 'MS2'],
-        ...                    label_columns=['parent'])
-        >>> df = pd.DataFrame({'mz': [100, 200], 'MS1': [1000, 500],
-        ...                    'MS2': [2000, 1500]})
-        >>> canonized = dc.canonise_and_truncate_df(df)
+        >>> df = pd.DataFrame({'mz': [100, 200], 'MS1': [1, 2], 'MS2': [3, 4]})
+        >>> canonized = canonize_spectrum(df, n_peaks=150)
         >>> len(canonized)
         150
     """
     pass
 ```
 
+### Updating Documentation
+
+- **README.md**: Update for user-facing changes
+- **API.md**: Update for API changes
+- **ARCHITECTURE.md**: Update for design changes
+- **Docstrings**: Always update with code changes
+
 ## Error Messages
 
-All error messages in the codebase should use **single quotes** for consistency:
+All error messages should:
+- Use **single quotes** for consistency
+- Be clear and actionable
+- Suggest how to fix the problem
 
 ```python
-# Good - single quotes
-raise ValueError(f"Unknown model '{model_name}'. Available: {available_models}")
+# Good
+if model_name not in available_models:
+    raise ValueError(
+        f"Unknown model '{model_name}'. "
+        f"Available models: {', '.join(available_models)}. "
+        f"Run 'parent-ion-classifier list' to see all models."
+    )
 
-# Bad - double quotes
-raise ValueError(f"Unknown model \"{model_name}\". Available: {available_models}")
+# Bad
+if model_name not in available_models:
+    raise ValueError("Model not found")
 ```
 
-## Reporting Issues
+## Project Structure
 
-When reporting issues, please include:
-- Python version
-- Operating system
-- Steps to reproduce
-- Expected vs actual behavior
-- Error messages (if any)
+```
+parent_ion_classifier/
+├── src/parent_ion_classifier/   # Main package source
+│   ├── config/                  # Configuration management
+│   ├── models/                  # Model loading and management
+│   ├── test/                    # Test data and fixtures
+│   ├── classifier.py            # Core classification logic
+│   ├── data_canonizer.py        # Data preprocessing
+│   ├── main.py                  # CLI entry point
+│   ├── test.py                  # Unit tests
+│   └── utils.py                 # Utility functions
+├── conda-recipe/                # Conda packaging files
+│   └── meta.yaml
+├── docs/                        # Documentation
+│   ├── API.md
+│   ├── ARCHITECTURE.md
+│   ├── CONTRIBUTING.md
+│   ├── INSTALLATION.md
+│   └── QUICKSTART.md
+├── tests/                       # Additional pytest tests (future)
+├── environment.yml              # Conda development environment
+├── pyproject.toml              # Package configuration
+├── LICENSE                      # MIT License
+└── README.md                    # Main documentation
+```
 
-## Questions?
+## Release Process (For Maintainers)
 
-Feel free to open an issue for discussion before making major changes.
+### 1. Update Version
+
+Update version in:
+- `pyproject.toml`
+- `conda-recipe/meta.yaml`
+- `src/parent_ion_classifier/__init__.py` (if version constant exists)
+
+### 2. Build Package
+
+```bash
+conda activate parent_classifier_dev
+conda build conda-recipe --output-folder bin
+```
+
+### 3. Upload to Anaconda.org
+
+```bash
+anaconda login
+anaconda upload bin/noarch/parent_ion_classifier-*.tar.bz2
+```
+
+### 4. Create GitHub Release
+
+- Tag the release: `git tag v1.0.1`
+- Push tag: `git push origin v1.0.1`
+- Create release on GitHub
+- Attach conda package to release
+- Write release notes
+
+### 5. Update Documentation
+
+- Update README badges if needed
+- Announce on relevant channels
+
+## Getting Help
+
+- **Questions**: Open a GitHub Discussion
+- **Bugs**: Open a GitHub Issue
+- **Security**: Email the maintainers directly
+
+## Code of Conduct
+
+- Be respectful and inclusive
+- Provide constructive feedback
+- Focus on the technical aspects
+- Help others learn and grow
 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
+
+## Thank You!
+
+Every contribution helps make Parent Ion Classifier better. We appreciate your time and effort!

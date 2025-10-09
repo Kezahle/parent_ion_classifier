@@ -2,6 +2,27 @@
 
 Complete API documentation for the Parent Ion Classifier package.
 
+## Installation
+
+Before using the API, install the package:
+
+```bash
+# Via conda (recommended)
+conda install -c ketzahle parent_ion_classifier
+
+# Via pip (coming soon)
+pip install parent-ion-classifier
+```
+
+See [INSTALLATION.md](INSTALLATION.md) for detailed instructions.
+
+## Quick Import Check
+
+```python
+import parent_ion_classifier
+print(f"Version: {parent_ion_classifier.__version__}")
+```
+
 ## Table of Contents
 
 - [Core Functions](#core-functions)
@@ -9,7 +30,10 @@ Complete API documentation for the Parent Ion Classifier package.
 - [Model Management](#model-management)
 - [Configuration](#configuration)
 - [Utilities](#utilities)
-- [Internal Functions](#internal-functions)
+- [Constants](#constants)
+- [Normalization Methods](#normalization-methods)
+- [Error Handling](#error-handling)
+- [Best Practices](#best-practices)
 
 ## Core Functions
 
@@ -158,28 +182,6 @@ canonized = dc.canonise_and_truncate_df(df)
 # Returns DataFrame with exactly 150 rows, sorted and scaled
 ```
 
-### DataCanonizer.df_to_tensors
-
-Convert DataFrame to PyTorch tensors.
-
-```python
-def df_to_tensors(self, df: pd.DataFrame) -> Tuple[torch.Tensor, torch.Tensor]
-```
-
-**Parameters**:
-- `df`: Canonized DataFrame
-
-**Returns**:
-- Tuple of (data_tensor, label_tensor)
-  - data_tensor: Shape (1, N, len(data_columns)), dtype float32
-  - label_tensor: Shape (N,), dtype float32, or None if no labels
-
-**Example**:
-```python
-data_tensor, labels = dc.df_to_tensors(canonized_df)
-# data_tensor.shape: torch.Size([1, 150, 3])
-```
-
 ## Model Management
 
 ### models.load_model
@@ -213,29 +215,6 @@ model = load_model('DualModeMSNet')
 
 # Load without auto-download (cache only)
 model = load_model('DualModeMSNet', auto_download=False, raise_exception=True)
-```
-
-### models.download_model
-
-Download a specific model.
-
-```python
-def download_model(model_name: str, force: bool = False) -> str
-```
-
-**Parameters**:
-- `model_name`: Name of model to download
-- `force`: If True, re-download even if cached
-
-**Returns**:
-- Path to downloaded model
-
-**Example**:
-```python
-from parent_ion_classifier.models import download_model
-
-path = download_model('DualModeMSNet')
-print(f"Model downloaded to: {path}")
 ```
 
 ### models.download_models
@@ -291,90 +270,6 @@ models = get_available_models()
 print(f"Available models: {models}")
 ```
 
-### models.get_model_groups
-
-Get list of model groups.
-
-```python
-def get_model_groups() -> List[str]
-```
-
-**Returns**:
-- Sorted list of group names
-
-**Example**:
-```python
-from parent_ion_classifier.models import get_model_groups
-
-groups = get_model_groups()
-# ['production_models', 'test_models', 'experimental_models']
-```
-
-### models.get_models_in_group
-
-Get models in a specific group.
-
-```python
-def get_models_in_group(group_name: str) -> List[str]
-```
-
-**Parameters**:
-- `group_name`: Name of the model group
-
-**Returns**:
-- List of model names in the group
-
-**Example**:
-```python
-from parent_ion_classifier.models import get_models_in_group
-
-models = get_models_in_group('production_models')
-# ['DualModeMSNet', 'TopIntensityMSNet_merged', ...]
-```
-
-### models.is_model_cached
-
-Check if a model is cached locally.
-
-```python
-def is_model_cached(model_name: str) -> bool
-```
-
-**Parameters**:
-- `model_name`: Name of the model
-
-**Returns**:
-- True if cached, False otherwise
-
-### models.get_cache_directory
-
-Get the cache directory path.
-
-```python
-def get_cache_directory() -> str
-```
-
-**Returns**:
-- Path to cache directory
-
-### models.clear_model_cache
-
-Clear cached models.
-
-```python
-def clear_model_cache(
-    model_names: Optional[List[str]] = None,
-    confirm: bool = True
-) -> bool
-```
-
-**Parameters**:
-- `model_names`: Specific models to clear (None = all)
-- `confirm`: If True, asks for confirmation
-
-**Returns**:
-- True if successful
-
 ## Configuration
 
 ### config.get_config_data
@@ -395,32 +290,6 @@ from parent_ion_classifier.config import get_config_data
 config = get_config_data()
 print(f"Repository: {config.repo_id}")
 print(f"Available models: {list(config.models.keys())}")
-```
-
-### ModelConfig
-
-Configuration dataclass.
-
-```python
-@dataclass(frozen=True)
-class ModelConfig:
-    repo_id: str
-    revision: str
-    models: Dict[str, ModelSpec]
-    model_groups: Dict[str, List[str]]
-```
-
-**Note on Model Filenames**: Some model names may reference the same underlying file. For example, `DualModeMSNet` and `MultiHeaded_X_attention` both use `mh_x_attention.pt_jit`. This is intentional for backward compatibility - `DualModeMSNet` serves as the production alias while `MultiHeaded_X_attention` preserves the experimental name.
-
-### ModelSpec
-
-Model specification dataclass.
-
-```python
-@dataclass(frozen=True)
-class ModelSpec:
-    filename: str
-    description: str = ""
 ```
 
 ## Utilities
@@ -500,8 +369,7 @@ models = MSNetModels(
 
 ```python
 from parent_ion_classifier import (
-    N,                              # 150 - Maximum peaks per
-    spectrum,
+    N,                              # 150 - Maximum peaks per spectrum
     DATA_COLUMNS,                   # ['mz', 'MS1', 'MS2']
     LABEL_COLUMN,                   # ['parent']
     MODEL_MISSING_VALUE,            # -1
@@ -531,38 +399,6 @@ from parent_ion_classifier import (
    - Probabilities sum to 1 within each mode
    - Use for dual-mode spectra or when mode is uncertain
 
-## Internal Functions
-
-The following functions are used internally by the package. They are documented here for developers and contributors, but typical users should not need to call them directly.
-
-### classifier.apply_output_normalization
-
-Normalize model output tensor and combine with DataFrame. This is called internally by the classification pipeline.
-
-```python
-def apply_output_normalization(
-    input_t: torch.Tensor,
-    output: torch.Tensor,
-    canonized_pos_df: pd.DataFrame,
-    canonized_neg_df: pd.DataFrame,
-    single_ionization: bool,
-    normalization_method: str = "none",
-) -> pd.DataFrame
-```
-
-**Parameters**:
-- `input_t`: The input tensor used for inference
-- `output`: The raw output tensor from the model
-- `canonized_pos_df`: Canonized DataFrame for positive spectra
-- `canonized_neg_df`: Canonized DataFrame for negative spectra
-- `single_ionization`: Flag indicating if spectra are single-mode
-- `normalization_method`: The normalization method to apply
-
-**Returns**:
-- DataFrame with normalized model predictions
-
-**Note**: This function is called automatically by `process_spectra()` and `process_spectrum()`. Users should not typically need to call it directly.
-
 ## Error Handling
 
 ### Common Exceptions
@@ -581,28 +417,6 @@ try:
     data = unpickle_file('missing.pkl')
 except FileNotFoundError:
     print('File not found!')
-```
-
-**LocalEntryNotFoundError**: Model not in cache and auto_download=False
-```python
-from huggingface_hub.utils import LocalEntryNotFoundError
-
-try:
-    model = load_jit_model('DualModeMSNet', auto_download=False)
-except LocalEntryNotFoundError:
-    print('Model not cached. Run: parent-ion-classifier download')
-```
-
-**Note**: All error messages use single quotes for consistency throughout the codebase.
-
-## Type Hints
-
-The package uses type hints throughout. Import commonly used types:
-
-```python
-from typing import Dict, List, Optional, Tuple, Any
-import pandas as pd
-import torch
 ```
 
 ## Best Practices
@@ -624,10 +438,10 @@ for spectrum in spectra_dict.values():
 ### 2. Check Cache Before Batch Processing
 
 ```python
-from parent_ion_classifier.models import check_and_download_models
+from parent_ion_classifier.models import download_models
 
 # Ensure models are available
-check_and_download_models(group_name='production_models')
+download_models(group_name='production_models')
 
 # Now process
 classify_parent_ions(...)
@@ -645,16 +459,6 @@ spectra_dict = {
 # At least one must be non-None
 ```
 
-### 4. Use Context Managers for Files
-
-```python
-# The package handles this internally, but for custom I/O:
-import pickle
-
-with open('data.pkl', 'rb') as f:
-    data = pickle.load(f)
-```
-
 ## Performance Tips
 
 1. **Batch Processing**: Process multiple spectra in one call
@@ -664,6 +468,8 @@ with open('data.pkl', 'rb') as f:
 
 ## See Also
 
+- [INSTALLATION.md](INSTALLATION.md) - Installation instructions and troubleshooting
+- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Design decisions and internals
 - [README.md](../README.md) - User guide and examples
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Development guide
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development guide

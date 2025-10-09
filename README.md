@@ -2,11 +2,14 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Conda Version](https://img.shields.io/conda/vn/ketzahle/parent_ion_classifier.svg)](https://anaconda.org/ketzahle/parent_ion_classifier)
+[![Conda Downloads](https://img.shields.io/conda/dn/ketzahle/parent_ion_classifier.svg)](https://anaconda.org/ketzahle/parent_ion_classifier)
+[![Conda Platform](https://img.shields.io/conda/pn/ketzahle/parent_ion_classifier.svg)](https://anaconda.org/ketzahle/parent_ion_classifier)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 A Python package for classifying parent ions in mass spectrometry (MS/MS) experiments using deep learning models.
 
-Developed as part of research at the Weizmann Institute of Science, this package leverages PyTorch-based neural networks to detect and classify parent ions from MS data, providing insights for chemical analysis and compound identification.
+Developed as part of a research thesis at the Open University of Israel with collaboration with the Weizmann Institute of Science, this package leverages PyTorch-based neural networks to detect and classify parent ions from MS data, providing insights for chemical analysis and compound identification.
 
 ## Features
 
@@ -15,39 +18,69 @@ Developed as part of research at the Weizmann Institute of Science, this package
 - **Automatic model management**: Downloads and caches models from Hugging Face Hub
 - **Multiple normalization methods**: Flexible output normalization (softmax, sigmoid, per-ionization)
 - **Command-line interface**: Easy integration into analysis workflows
+- **Cross-platform support**: Works on Linux, macOS (Intel & ARM), and Windows
 - **Cross-platform reproducibility**: Deterministic results across different systems
 - **Built-in testing**: Verify installation with included test suite
 
 ## Installation
 
-### From Conda (Recommended)
+### Option 1: Conda (Recommended)
+
+The easiest way to install Parent Ion Classifier is via conda. This installs the package with all dependencies:
 
 ```bash
-# Create a new environment
-conda create -n parent_classifier python=3.12
+# Create a new environment (recommended)
+conda create -n parent_classifier python=3.10
 conda activate parent_classifier
 
-# Install from local build
-conda install parent_ion_classifier -c file:///path/to/bin
+# Install from conda
+conda install -c ketzahle parent_ion_classifier
 ```
 
-### From Source
+**That's it!** The package and all dependencies are now installed.
+
+### Option 2: pip (Coming Soon)
+
+```bash
+pip install parent-ion-classifier
+```
+
+*Note: PyPI distribution coming soon. For now, please use conda or install from source.*
+
+### Option 3: From Source (For Development)
+
+If you want to contribute to development or modify the package:
 
 ```bash
 # Clone the repository
 git clone https://github.com/Kezahle/parent_ion_classifier.git
 cd parent_ion_classifier
 
-# Build the package
-./scripts/build_and_test.sh build
+# Create development environment from YAML
+conda env create -f environment.yml
+conda activate parent_classifier_dev
 
-# Install in a new environment
-conda create -n parent_classifier python=3.12
-conda activate parent_classifier
-conda install parent_ion_classifier -c "file://$PWD/bin"
+# Install in development mode
+pip install -e .
 ```
 
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed development setup instructions.
+
 ## Quick Start
+
+### First-Time Setup
+
+After installation, download the models (one-time setup):
+
+```bash
+# Download all production models (recommended)
+parent-ion-classifier download
+
+# Or download a specific model group
+parent-ion-classifier download --group production_models
+```
+
+Models are cached locally and only need to be downloaded once.
 
 ### Command Line Usage
 
@@ -58,8 +91,8 @@ parent-ion-classifier classify -i input.pkl -o output.pkl
 # Use different normalization methods
 parent-ion-classifier classify -i input.pkl -o output.pkl -n softmax_per_ionization
 
-# Download models before classification
-parent-ion-classifier download --group production_models
+# Check model status
+parent-ion-classifier status
 
 # Run tests to verify installation
 parent-ion-classifier test
@@ -73,7 +106,7 @@ from parent_ion_classifier import DataCanonizer, process_spectra
 from parent_ion_classifier.models import load_model
 from parent_ion_classifier.classifier import MSNetModels
 
-# Load models
+# Load models (downloads automatically if needed)
 models = MSNetModels(
     positive=load_model('TopIntensityMSNet_positive'),
     negative=load_model('TopIntensityMSNet_negative'),
@@ -85,9 +118,9 @@ models = MSNetModels(
 spectra_dict = {
     '001': {
         'positive': pd.DataFrame({
-            'mz': [...],
-            'MS1': [...],
-            'MS2': [...]
+            'mz': [100.5, 200.3, 150.7],
+            'MS1': [1000, 500, 750],
+            'MS2': [2000, 1500, 1800]
         }),
         'negative': None  # or DataFrame for dual-mode
     }
@@ -186,7 +219,7 @@ When working with dual-mode spectra, you can choose between two models:
 
 | Model | Performance | Speed | Best For |
 |-------|------------|-------|----------|
-| **DualModeMSNet** (default) | Best | Slower | High-accuracy requirements, small-medium datasets |
+| **DualModeMSNet** (default) | Best | Slower | High-accuracy requirements |
 | **InterleavedEmbeddings** | Very good | Faster | Large batch processing, speed-critical workflows |
 
 **Example - Using the faster model:**
@@ -210,70 +243,43 @@ models = MSNetModels(
 - **`softmax`**: Softmax over all predictions
 - **`softmax_per_ionization`**: Separate softmax for positive and negative modes (recommended)
 
-## Development
-
-### Building from Source
-
-```bash
-# Build package only
-./scripts/build_and_test.sh build
-
-# Set up test environment only
-./scripts/build_and_test.sh test
-
-# Build and test in one command
-./scripts/build_and_test.sh all
-```
-
-### Project Structure
-
-```
-parent_ion_classifier/
-|-- src/parent_ion_classifier/    # Main package
-|   |-- config/                   # Configuration management
-|   |-- models/                   # Model loading and management
-|   |-- test/                     # Test data and fixtures
-|   |-- classifier.py             # Core classification logic
-|   |-- data_canonizer.py         # Data preprocessing
-|   |-- main.py                   # CLI entry point
-|   `-- utils.py                  # Utility functions
-|-- scripts/                      # Build and test scripts
-|-- conda-recipe/                 # Conda packaging
-|-- docs/                         # Documentation
-`-- tests/                        # Additional tests (if any)
-```
-
-### Running Tests
-
-Tests ensure cross-platform reproducibility and validate model outputs:
-
-```bash
-conda activate test_env
-parent-ion-classifier test
-```
-
-Tests compare outputs across different normalization methods and verify deterministic behavior.
-
 ## Requirements
 
 - Python ≥3.10
-- PyTorch ≥2.2.0
-- pandas <2.0.0
-- numpy <2
+- PyTorch ≥2.2.0 (CPU version included)
+- pandas
+- numpy
 - huggingface_hub ≥0.23
 - tqdm
+- scikit-learn
+- matplotlib
+- seaborn
+
+All dependencies are automatically installed with conda.
+
+## Documentation
+
+- **[Installation Guide](docs/INSTALLATION.md)**: Detailed installation instructions and troubleshooting
+- **[Quick Start Guide](docs/QUICKSTART.md)**: Get started in 5 minutes
+- **[API Reference](docs/API.md)**: Complete API documentation
+- **[Architecture Guide](docs/ARCHITECTURE.md)**: Design decisions and internals
+- **[Contributing Guide](docs/CONTRIBUTING.md)**: Development setup and guidelines
 
 ## Citation
 
 If you use this package in your research, please cite:
 
 ```
-[Citation information to be added]
+Katz, A. (2025). Parent Ion Classifier: Deep Learning for MS/MS Parent Ion Classification.
+Open University of Israel & Weizmann Institute of Science.
+https://github.com/Kezahle/parent_ion_classifier
 ```
+
+*Formal citation to be updated upon publication.*
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
@@ -281,13 +287,14 @@ Contributions are welcome! Please see our [Contributing Guide](docs/CONTRIBUTING
 
 ## Support
 
+- **Package Page**: [Anaconda.org](https://anaconda.org/ketzahle/parent_ion_classifier)
 - **Issues**: [GitHub Issues](https://github.com/Kezahle/parent_ion_classifier/issues)
-- **Documentation**: [GitHub Repository](https://github.com/Kezahle/parent_ion_classifier)
+- **Source Code**: [GitHub Repository](https://github.com/Kezahle/parent_ion_classifier)
 
 ## Authors
 
-- Ariel Katz
+- **Ariel Katz** - *Main Developer*
 
 ## Acknowledgments
 
-Developed as part of a research Thesis at the Open University of Israel with collaboration with Weizmann Institute of Science.
+Developed as part of a research thesis at the **Open University of Israel** with collaboration with the **Weizmann Institute of Science**.

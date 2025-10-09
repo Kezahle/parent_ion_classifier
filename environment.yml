@@ -1,0 +1,32 @@
+name: parent_classifier_dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  # Build dependencies
+  - conda-build
+  - setuptools
+  # Runtime dependencies
+  - pytorch-cpu>=2.2.0
+  - numpy
+  - pandas
+  - tqdm
+  - requests
+  - onnx
+  - seaborn
+  - matplotlib
+  - scikit-learn
+  - huggingface_hub>=0.23
+  # Development dependencies
+  - pytest
+  - black
+  - isort
+  - ruff
+  - mypy
+  - pre-commit
+  - ipython
+  # Documentation
+  - sphinx
+  - sphinx_rtd_theme

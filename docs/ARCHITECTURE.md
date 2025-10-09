@@ -10,6 +10,40 @@ The Parent Ion Classifier is organized into modular components that handle diffe
 Data Input → Canonization → Model Inference → Normalization → Output
 ```
 
+## Distribution Strategy
+
+### Package Distribution
+
+The package is distributed primarily via Anaconda.org:
+- **Primary Channel**: https://anaconda.org/ketzahle/parent_ion_classifier
+- **Installation**: `conda install -c ketzahle parent_ion_classifier`
+- **Build Type**: `noarch` (platform-independent pure Python)
+- **Package Size**: ~120 KB (lightweight)
+- **Model Storage**: HuggingFace Hub (downloaded on-demand)
+- **Total Models**: ~500 MB (cached locally after download)
+
+This architecture keeps the package small while models are cached locally on first use.
+
+### Supported Platforms
+
+Pure Python implementation with `noarch` build ensures cross-platform compatibility:
+- **Linux**: x86_64, ARM64
+- **macOS**: Intel (x86_64), Apple Silicon (ARM64)
+- **Windows**: x86_64
+
+### Build System
+
+The package uses modern Python packaging standards:
+- **`pyproject.toml`**: Package metadata (PEP 517/518)
+- **`conda-recipe/meta.yaml`**: Conda package specification
+- **`noarch: python`**: Platform-independent build
+- **No compiled extensions**: Pure Python for maximum compatibility
+
+### Future Distribution
+
+- **PyPI** (pip install): Planned for future release
+- **Conda-Forge**: Potential submission to main conda channel
+
 ## Package Structure
 
 ```
